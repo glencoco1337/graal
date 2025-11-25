@@ -26,7 +26,6 @@ package jdk.graal.compiler.lir.phases;
 
 import jdk.graal.compiler.debug.Assertions;
 import jdk.graal.compiler.lir.alloc.AllocationStageVerifier;
-import jdk.graal.compiler.lir.stackslotalloc.GraphColoringStackSlotAllocator;
 import jdk.graal.compiler.lir.stackslotalloc.LSStackSlotAllocator;
 import jdk.graal.compiler.lir.stackslotalloc.SimpleStackSlotAllocator;
 import jdk.graal.compiler.lir.alloc.lsra.LinearScanPhase;
