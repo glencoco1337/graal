@@ -26,6 +26,12 @@ package jdk.graal.compiler.lir.phases;
 
 import jdk.graal.compiler.debug.Assertions;
 import jdk.graal.compiler.lir.alloc.AllocationStageVerifier;
+<<<<<<< HEAD
+=======
+import jdk.graal.compiler.lir.alloc.verifier.PreRegisterAllocationPhase;
+import jdk.graal.compiler.lir.alloc.verifier.RegisterAllocationVerifierPhase;
+import jdk.graal.compiler.lir.alloc.verifier.RegisterAllocationVerifierPhaseState;
+>>>>>>> c1db40be1f6 (Add shared state for verifier phases)
 import jdk.graal.compiler.lir.stackslotalloc.LSStackSlotAllocator;
 import jdk.graal.compiler.lir.stackslotalloc.SimpleStackSlotAllocator;
 import jdk.graal.compiler.lir.alloc.lsra.LinearScanPhase;
