@@ -55,7 +55,8 @@ public final class ConflictedAllocationState extends AllocationState {
 
     ConflictedAllocationState(ConflictedAllocationState other) {
         this.conflictedStates = new EconomicHashSet<>();
-        this.parents = new EconomicHashSet<>(other.parents);
+        this.parents = new EconomicHashSet<>();
+        this.parents.add(other);
     }
 
     void addConflictedValue(ValueAllocationState state) {
@@ -155,7 +156,7 @@ public final class ConflictedAllocationState extends AllocationState {
     public String toString() {
         StringBuilder sb = new StringBuilder("Conflicted {");
         for (var state : this.conflictedStates) {
-            sb.append(state.toString()).append(", ");
+            sb.append(state.getValue().toString()).append(", ");
         }
 
         if (!conflictedStates.isEmpty()) {

@@ -51,19 +51,14 @@ public class RAVInstruction {
      */
     public abstract static class Base {
         /**
-         * Underlying LIR instruction that this is representing.
+         * Underlying LIR instruction.
          */
         protected LIRInstruction lirInstruction;
 
         /**
-         * List of speculative moves, these might be removed but still hold important information
-         * for us, so we add them to the verifier IR in case they are, this happens when a MOVE
-         * source and target locations are equal (and thus redundant) but before allocation their
-         * variable counter-parts are not equal.
-         *
-         * <p>
-         * Before alloc: {@code v1 = MOVE v2} after alloc: {@code rax = MOVE rax}
-         * </p>
+         * List of speculative moves, these are moves that might be removed by the allocator.
+         * For example, the instruction {@code v1 = MOVE v2}, becomes {@code rax = MOVE rax}
+         * after allocations and is therefore redundant.
          */
         protected List<CoalescedMove> speculativeMoveList;
 
@@ -154,7 +149,7 @@ public class RAVInstruction {
             if (index >= this.count) {
                 /*
                  * In test case DerivedOopTest, liveBasePointers has extra values after allocation
-                 * in frame state, so we skip them
+                 * in the frame state, these are skipped.
                  */
                 return;
             }
@@ -165,21 +160,6 @@ public class RAVInstruction {
         public void addOrig(int index, Value value) {
             assert index < this.orig.length : "Index out of bounds";
             this.orig[index] = RAValue.create(value);
-        }
-
-        /**
-         * Verify that all presumed values are present and that both sides have them.
-         *
-         * @return true, if contents have been successfully verified, false if there's null in
-         *         either array.
-         */
-        public boolean verifyContents() {
-            for (int i = 0; i < this.curr.length; i++) {
-                if (this.curr[i] == null || this.orig[i] == null) {
-                    return false;
-                }
-            }
-            return true;
         }
 
         @Override

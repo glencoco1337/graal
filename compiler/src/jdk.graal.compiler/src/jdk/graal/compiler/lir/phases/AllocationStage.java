@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,8 @@ package jdk.graal.compiler.lir.phases;
 
 import jdk.graal.compiler.debug.Assertions;
 import jdk.graal.compiler.lir.alloc.AllocationStageVerifier;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-import jdk.graal.compiler.lir.alloc.verifier.PreRegisterAllocationPhase;
-import jdk.graal.compiler.lir.alloc.verifier.RegisterAllocationVerifierPhase;
-import jdk.graal.compiler.lir.alloc.verifier.RegisterAllocationVerifierPhaseState;
->>>>>>> c1db40be1f6 (Add shared state for verifier phases)
-=======
-import jdk.graal.compiler.lir.alloc.RegisterAllocationPhase;
 import jdk.graal.compiler.lir.alloc.verifier.RegAllocVerifierPhase;
->>>>>>> df4048bc017 (Wrap around allocators)
+import jdk.graal.compiler.lir.alloc.verifier.RegAllocVerifierUtil;
 import jdk.graal.compiler.lir.stackslotalloc.LSStackSlotAllocator;
 import jdk.graal.compiler.lir.stackslotalloc.SimpleStackSlotAllocator;
 import jdk.graal.compiler.lir.alloc.lsra.LinearScanPhase;
@@ -54,6 +45,7 @@ public class AllocationStage extends LIRPhaseSuite<AllocationPhase.AllocationCon
         if (GraphColoringStackSlotAllocator.Options.LIROptGraphColoringStackSlotAllocator.getValue(options)) {
             appendPhase(new GraphColoringStackSlotAllocator());
         } else if (LSStackSlotAllocator.Options.LIROptLSStackSlotAllocator.getValue(options)) {
+        if (LSStackSlotAllocator.Options.LIROptLSStackSlotAllocator.getValue(options)) {
             appendPhase(new LSStackSlotAllocator());
         } else {
             appendPhase(new SimpleStackSlotAllocator());
@@ -61,6 +53,10 @@ public class AllocationStage extends LIRPhaseSuite<AllocationPhase.AllocationCon
 
         if (Assertions.detailedAssertionsEnabled(options)) {
             appendPhase(new AllocationStageVerifier());
+        }
+
+        if (RegAllocVerifierPhase.Options.EnableRAVerifier.getValue(options)) {
+            RegAllocVerifierUtil.hookAllocationStage(this);
         }
     }
 }

@@ -84,8 +84,15 @@ public class AllocationStateMap {
     }
 
     public AllocationStateMap(BasicBlock<?> block, AllocationStateMap other) {
-        valueMap = new EconomicHashMap<>(other.valueMap);
-        stackSlotMap = new TreeMap<>(other.stackSlotMap);
+        valueMap = new EconomicHashMap<>(other.valueMap.size());
+        for (var entry : other.valueMap.entrySet()) {
+            valueMap.put(entry.getKey(), entry.getValue().clone());
+        }
+
+        stackSlotMap = new TreeMap<>(other.stackSlotMap.comparator());
+        for (var entry : other.stackSlotMap.entrySet()) {
+            stackSlotMap.put(entry.getKey(), entry.getValue().clone());
+        }
 
         this.block = block;
         frameMap = other.frameMap;

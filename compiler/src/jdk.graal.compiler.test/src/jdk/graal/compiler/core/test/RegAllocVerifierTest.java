@@ -43,6 +43,7 @@ import jdk.graal.compiler.lir.LIRValueUtil;
 import jdk.graal.compiler.lir.StandardOp;
 import jdk.graal.compiler.lir.Variable;
 import jdk.graal.compiler.lir.alloc.RegisterAllocationPhase;
+import jdk.graal.compiler.lir.alloc.verifier.RegAllocVerifierUtil;
 import jdk.graal.compiler.lir.alloc.verifier.UnknownAllocationState;
 import jdk.graal.compiler.lir.alloc.verifier.exceptions.AliveConstraintViolationException;
 import jdk.graal.compiler.lir.alloc.verifier.exceptions.CalleeSavedRegisterNotRetrievedException;
@@ -66,8 +67,6 @@ import jdk.graal.compiler.lir.asm.CompilationResultBuilder;
 import jdk.graal.compiler.lir.framemap.FrameMap;
 import jdk.graal.compiler.lir.framemap.SimpleVirtualStackSlot;
 import jdk.graal.compiler.lir.gen.LIRGenerationResult;
-import jdk.graal.compiler.lir.phases.AllocationPhase;
-import jdk.graal.compiler.lir.phases.LIRPhase;
 import jdk.graal.compiler.lir.phases.LIRSuites;
 import jdk.graal.compiler.nodes.StructuredGraph;
 import jdk.graal.compiler.options.OptionValues;
@@ -1155,11 +1154,6 @@ public class RegAllocVerifierTest extends GraalCompilerTest {
                 redirectedReloadLocation = getUnusedValue(lir, instructions, context, reload.to.getLIRKind());
 
                 reload.to = redirectedReloadLocation;
-
-                // LocationMove is generally used instead of specialized Reload,
-                // so the destination needs to be overwritten in both cases.
-                // This should probably be changed.
-                ((RAVInstruction.LocationMove) reload).to = redirectedReloadLocation;
                 return true;
             });
         }
@@ -1364,25 +1358,19 @@ public class RegAllocVerifierTest extends GraalCompilerTest {
         LIRSuites suites = super.createLIRSuites(options);
         var stage = suites.getAllocationStage();
 
-        var it = stage.findPhase(RegisterAllocationPhase.class);
-        Assert.assertNotNull(it);
-
-        LIRPhase<AllocationPhase.AllocationContext> stackAllocator = null;
-        var allocator = (RegisterAllocationPhase) it.previous();
-        if (allocator instanceof RegAllocVerifierPhase rav) {
-            stackAllocator = rav.getStackSlotAllocator();
-            if (stackAllocator != null) {
-                rav.setStackSlotAllocator(null);
-            }
-
-            phase.setAllocator(rav.getAllocator());
-        } else {
-            phase.setAllocator(allocator);
+        var it = stage.findPhase(RegAllocVerifierPhase.class);
+        if (it == null) {
+            RegAllocVerifierUtil.hookAllocationStage(stage, false);
+            it = stage.findPhase(RegAllocVerifierPhase.class);
         }
 
+        var rav = (RegAllocVerifierPhase) it.previous();
+        phase.setAllocator(rav.getAllocator());
         it.set(phase);
-        if (stackAllocator != null) {
-            stage.appendPhase(stackAllocator);
+
+        var stackAlloc = rav.getStackSlotAllocator();
+        if (stackAlloc != null) {
+            stage.appendPhase(stackAlloc);
         }
 
         return suites;

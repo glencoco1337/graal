@@ -42,9 +42,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Class encapsulating the whole Register Allocation Verification. Maintaining entry states for
- * blocks, resolving label variable locations, and checking the validity of every location to
- * variable correspondence.
+ * Encapsulates register allocation verification by maintaining block entry states, resolving label
+ * variable locations, and checking the correspondence between locations and variables.
  */
 public class RegAllocVerifier {
     /**
@@ -58,35 +57,29 @@ public class RegAllocVerifier {
     protected final BlockMap<BlockVerifierState> blockEntryStates;
 
     /**
-     * LIR necessary for to access the program graph.
+     * LIR used to access the program graph.
      */
     protected final LIR lir;
 
     /**
-     * Register Allocator config used for validating if the allocator uses a valid register.
+     * Register allocation configuration used to validate registers chosen by the allocator.
      */
     protected final RegisterAllocationConfig registerAllocationConfig;
 
     /**
-     * Resolves locations for label variables by finding their first usage and walking back to the
-     * defining label.
-     */
-    protected final FromUsageResolverGlobal fromUsageResolverGlobal;
-
-    /**
-     * Track callee saved values from start block to exit blocks.
+     * Tracks callee-saved values from the start block to exit blocks.
      */
     protected final CalleeSaveMap calleeSaveMap;
 
     /**
-     * Register allocator we are verifying output of.
+     * Register allocator whose output is being verified.
      */
-    protected RegisterAllocationPhase allocator;
+    protected final RegisterAllocationPhase allocator;
 
     /**
      * Frame map used for stack overlap validation.
      */
-    protected FrameMap frameMap;
+    protected final FrameMap frameMap;
 
     public RegAllocVerifier(LIR lir, FrameMap frameMap, BlockMap<List<RAVInstruction.Base>> blockInstructions, RegisterAllocationConfig registerAllocationConfig, RegisterAllocationPhase allocator) {
         this.lir = lir;
@@ -96,8 +89,6 @@ public class RegAllocVerifier {
         var cfg = lir.getControlFlowGraph();
         this.blockInstructions = blockInstructions;
         this.blockEntryStates = new BlockMap<>(cfg);
-
-        this.fromUsageResolverGlobal = new FromUsageResolverGlobal(lir, blockInstructions);
 
         this.calleeSaveMap = new CalleeSaveMap(registerAllocationConfig.getRegisterConfig());
         this.allocator = allocator;
@@ -120,9 +111,8 @@ public class RegAllocVerifier {
     }
 
     /**
-     * For every block, we need to calculate its entry state, which is a combination of states of
-     * blocks that are its predecessors; we get after reached a fixed point state, where no entry
-     * state is changed.
+     * Calculates each block's entry state by combining its predecessor states. Processing
+     * continues until no entry state changes.
      *
      * <p>
      * This is necessary to verify instruction inputs correctly.
@@ -165,10 +155,6 @@ public class RegAllocVerifier {
 
                 this.blockEntryStates.put(succ, succState);
 
-                /*
-                 * Remove block from the worklist to delay processing this can reduce the number of
-                 * times that merge block is processed due to changes.
-                 */
                 worklist.add(succ);
             }
         }
@@ -180,8 +166,8 @@ public class RegAllocVerifier {
 
     /**
      * By using the entry states calculated in a step beforehand, we check the input of every
-     * instruction to see that it matches symbols before allocation; after wards we update the state
-     * so the next instruction has the correct state at said instruction input.
+     * instruction to see that it matches symbols before allocation. Afterwards, we update the state
+     * so that the next instruction sees the correct input state.
      */
     public void verifyInstructionInputs() {
         for (var blockId : this.lir.getBlocks()) {
@@ -295,10 +281,11 @@ public class RegAllocVerifier {
         switch (instruction) {
             case RAVInstruction.Op op -> {
                 for (int i = 0; i < op.dests.count; i++) {
-                    if (op.dests.curr[i].equals(op.dests.orig[i])) {
+                    var curr = op.dests.curr[i];
+                    if (curr == null || curr.equals(op.dests.orig[i])) {
                         continue;
                     }
-                    checkOutputLocationValidity(op.dests.curr[i], instruction, block);
+                    checkOutputLocationValidity(curr, instruction, block);
                 }
                 for (int i = 0; i < op.temp.count; i++) {
                     if (op.temp.curr[i].equals(op.temp.orig[i])) {
@@ -338,22 +325,20 @@ public class RegAllocVerifier {
     }
 
     /**
-     * Run verification based on verifier IR created in phase beforehand, resolving stripped label
-     * variable locations back, calculating entry state for every block so that at the end we can
-     * verify inputs of instructions match variables present before allocation.
+     * Runs verification on verifier IR prepared by the preceding phase. It calculates the entry
+     * state for every block and verifies that instruction inputs match the variables present before
+     * allocation.
      *
      * <p>
-     * The issues we are looking to catch are mostly about making sure that the order of spills,
-     * reloads, and moves is correct and that used location after stores the symbol that is supposed
-     * to be there.
+     * This primarily checks the order of spills, reloads, and moves, and verifies that each used
+     * location contains the expected symbol.
      * </p>
      *
      * <p>
-     * We also make sure that kinds are still matching, operand flags aren't violated, alive
-     * location not being used as temp or output of the same instruction.
+     * It also checks that kinds match, operand flags are respected, and an alive location is not
+     * used as a temporary or output of the same instruction.
      * </p>
      */
-    @SuppressWarnings("try")
     public void run(boolean failOnFirst) {
         this.computeEntryStates();
 

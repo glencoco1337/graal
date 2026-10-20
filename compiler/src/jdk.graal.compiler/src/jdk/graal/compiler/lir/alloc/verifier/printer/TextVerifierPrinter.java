@@ -55,7 +55,7 @@ public class TextVerifierPrinter implements VerifierPrinter {
     protected RegisterAllocationConfig registerAllocationConfig;
 
     public TextVerifierPrinter(LogStream out, LIR lir, BlockMap<List<RAVInstruction.Base>> blockInstructions,
-                               BlockMap<BlockVerifierState> blockEntryStates, List<RAVException> exceptions) {
+                    BlockMap<BlockVerifierState> blockEntryStates, List<RAVException> exceptions) {
         this.out = out;
         this.lir = lir;
         this.blockInstructions = blockInstructions;

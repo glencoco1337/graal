@@ -516,7 +516,7 @@ public class RegAllocVerifierPhase extends RegisterAllocationPhase {
                 var debugPath = debugCtx.getDumpPath(".rav.txt", false);
 
                 try (PrintStream output = new PrintStream(debugPath)) {
-                    createPrinter(output, verifier, List.of(e));
+                    createPrinter(output, verifier, List.of(e)).print();
                 } catch (FileNotFoundException ignored) {
                 }
 
