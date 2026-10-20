@@ -28,7 +28,6 @@ import jdk.graal.compiler.core.common.alloc.RegisterAllocationConfig;
 import jdk.graal.compiler.core.common.cfg.BasicBlock;
 import jdk.graal.compiler.core.common.cfg.BlockMap;
 import jdk.graal.compiler.lir.LIR;
-import jdk.graal.compiler.lir.alloc.verifier.exceptions.InvalidRegisterUsedException;
 import jdk.graal.compiler.lir.alloc.verifier.exceptions.RAVException;
 import jdk.graal.compiler.lir.alloc.verifier.exceptions.RAVFailedVerificationException;
 import jdk.graal.compiler.lir.alloc.verifier.exceptions.SpilledConstantException;
@@ -184,7 +183,6 @@ public class RegAllocVerifier {
                     spilledConstantExceptions.put(e.valueAllocationState.getRAValue(), e);
                 }
 
-                checkInstructionOutputLocationValidity(instr, block);
                 state.update(instr);
             }
 
@@ -243,7 +241,6 @@ public class RegAllocVerifier {
             for (var instr : instructions) {
                 try {
                     state.check(instr);
-                    checkInstructionOutputLocationValidity(instr, block);
                 } catch (SpilledConstantException e) {
                     spilledConstantExceptions.put(e.valueAllocationState.getRAValue(), e);
                 } catch (RAVException e) {
@@ -274,53 +271,6 @@ public class RegAllocVerifier {
 
         if (!exceptions.isEmpty()) {
             throw new RAVFailedVerificationException(exceptions);
-        }
-    }
-
-    protected void checkInstructionOutputLocationValidity(RAVInstruction.Base instruction, BasicBlock<?> block) {
-        switch (instruction) {
-            case RAVInstruction.Op op -> {
-                for (int i = 0; i < op.dests.count; i++) {
-                    var curr = op.dests.curr[i];
-                    if (curr == null || curr.equals(op.dests.orig[i])) {
-                        continue;
-                    }
-                    checkOutputLocationValidity(curr, instruction, block);
-                }
-                for (int i = 0; i < op.temp.count; i++) {
-                    if (op.temp.curr[i].equals(op.temp.orig[i])) {
-                        continue;
-                    }
-                    checkOutputLocationValidity(op.temp.curr[i], instruction, block);
-                }
-            }
-            case RAVInstruction.ValueMove move -> {
-                if (move.validateRegisters) {
-                    checkOutputLocationValidity(move.location, instruction, block);
-                }
-            }
-            case RAVInstruction.LocationMove move -> {
-                if (move instanceof RAVInstruction.StackMove stackMove && stackMove.backupSlot != null) {
-                    checkOutputLocationValidity(stackMove.backupSlot, stackMove, block);
-                }
-
-                if (move.validateRegisters) {
-                    checkOutputLocationValidity(move.to, instruction, block);
-                }
-            }
-            default -> {
-            }
-        }
-    }
-
-    protected void checkOutputLocationValidity(RAValue location, RAVInstruction.Base instruction, BasicBlock<?> block) {
-        if (!location.isRegister()) {
-            return;
-        }
-
-        var register = location.asRegister().getRegister();
-        if (!this.registerAllocationConfig.getAllocatableRegisters().contains(register)) {
-            throw new InvalidRegisterUsedException(register, instruction, block);
         }
     }
 

@@ -35,6 +35,7 @@ import jdk.graal.compiler.lir.LIRValueUtil;
 import jdk.graal.compiler.lir.alloc.verifier.exceptions.AliveConstraintViolationException;
 import jdk.graal.compiler.lir.alloc.verifier.exceptions.CalleeSavedRegisterNotRetrievedException;
 import jdk.graal.compiler.lir.alloc.verifier.exceptions.ConstantRematerializedToStackException;
+import jdk.graal.compiler.lir.alloc.verifier.exceptions.InvalidRegisterUsedException;
 import jdk.graal.compiler.lir.alloc.verifier.exceptions.JavaKindReferenceMismatchException;
 import jdk.graal.compiler.lir.alloc.verifier.exceptions.KindsMismatchException;
 import jdk.graal.compiler.lir.alloc.verifier.exceptions.MissingLocationException;
@@ -378,27 +379,83 @@ public class BlockVerifierState {
      * @param instruction Instruction we are checking
      */
     public void check(RAVInstruction.Base instruction) {
-        if (instruction instanceof RAVInstruction.Op op) {
-            checkInputs(op.uses, op);
-            checkInputs(op.alive, op);
-            checkStateValues(op);
+        switch (instruction) {
+            case RAVInstruction.Op op -> checkOp(op);
+            case RAVInstruction.ValueMove valueMove -> checkValueMove(valueMove);
+            case RAVInstruction.LocationMove move -> checkLocationMove(move);
+            default -> throw GraalError.shouldNotReachHere("Invalid RAV instruction " + instruction);
+        }
+    }
 
-            checkTempKind(op);
-            checkAliveConstraint(op);
+    protected void checkOp(RAVInstruction.Op op) {
+        checkInputs(op.uses, op);
+        checkInputs(op.alive, op);
+        checkStateValues(op);
 
-            checkOperandFlags(op.dests, op);
-            checkOperandFlags(op.uses, op);
-            checkOperandFlags(op.alive, op);
-            checkOperandFlags(op.temp, op);
+        checkTempKind(op);
+        checkAliveConstraint(op);
 
-            checkStateValues(op.bcFrames, op);
-            checkStateValues(op.virtualObj, op);
+        checkOperandFlags(op.dests, op);
+        checkOperandFlags(op.uses, op);
+        checkOperandFlags(op.alive, op);
+        checkOperandFlags(op.temp, op);
 
-            if (op.references != null) {
-                checkReferences(op);
+        checkStateValues(op.bcFrames, op);
+        checkStateValues(op.virtualObj, op);
+
+        if (op.references != null) {
+            checkReferences(op);
+        }
+
+        checkDestinationValidity(op.dests, op);
+        checkDestinationValidity(op.temp, op);
+    }
+
+    protected void checkDestinationValidity(RAVInstruction.ValueArrayPair destinations, RAVInstruction.Op op) {
+        for (int i = 0; i < destinations.count; i++) {
+            var curr = destinations.curr[i];
+            if (curr == null || curr.equals(destinations.orig[i])) {
+                continue;
             }
-        } else if (instruction instanceof RAVInstruction.LocationMove move) {
-            checkLocationMoveKinds(move);
+            checkOutputLocationValidity(curr, op);
+        }
+    }
+
+    protected void checkValueMove(RAVInstruction.ValueMove move) {
+        if (move.validateRegisters) {
+            checkOutputLocationValidity(move.getLocation(), move);
+        }
+    }
+
+    protected void checkLocationMove(RAVInstruction.LocationMove move) {
+        if (RegAllocVerifierPhase.Options.CheckNeverSpillConstants.getValue(options)) {
+            if (move instanceof RAVInstruction.Spill spill && allocator.getNeverSpillConstants()) {
+                var sourceState = values.get(spill.from);
+                if (sourceState instanceof ValueAllocationState valueAllocationState) {
+                    if (LIRValueUtil.isConstantValue(valueAllocationState.getValue())) {
+                        throw new SpilledConstantException(valueAllocationState, spill, block);
+                    }
+                }
+            }
+        }
+
+        if (move instanceof RAVInstruction.StackMove stackMove && stackMove.backupSlot != null) {
+            checkOutputLocationValidity(stackMove.backupSlot, stackMove);
+        }
+
+        if (move.validateRegisters) {
+            checkOutputLocationValidity(move.to, move);
+        }
+    }
+
+    protected void checkOutputLocationValidity(RAValue location, RAVInstruction.Base instruction) {
+        if (!location.isRegister()) {
+            return;
+        }
+
+        var register = location.asRegister().getRegister();
+        if (!registerAllocationConfig.getAllocatableRegisters().contains(register)) {
+            throw new InvalidRegisterUsedException(register, instruction, block);
         }
     }
 
@@ -439,25 +496,6 @@ public class BlockVerifierState {
             }
 
             throw new MissingReferenceException(op, block, reference, state, this);
-        }
-    }
-
-    /**
-     * Check that a move destination has the correct kind to store the {@link ValueAllocationState
-     * value}.
-     *
-     * @param move Move between locations, inserted by register allocator
-     */
-    protected void checkLocationMoveKinds(RAVInstruction.LocationMove move) {
-        if (RegAllocVerifierPhase.Options.CheckNeverSpillConstants.getValue(options)) {
-            if (move instanceof RAVInstruction.Spill spill && allocator.getNeverSpillConstants()) {
-                var sourceState = values.get(spill.from);
-                if (sourceState instanceof ValueAllocationState valueAllocationState) {
-                    if (LIRValueUtil.isConstantValue(valueAllocationState.getValue())) {
-                        throw new SpilledConstantException(valueAllocationState, spill, block);
-                    }
-                }
-            }
         }
     }
 

@@ -30,6 +30,7 @@ import jdk.graal.compiler.lir.alloc.verifier.RegAllocVerifierPhase;
 import jdk.graal.compiler.lir.alloc.verifier.RegAllocVerifierUtil;
 import jdk.graal.compiler.lir.stackslotalloc.LSStackSlotAllocator;
 import jdk.graal.compiler.lir.stackslotalloc.SimpleStackSlotAllocator;
+import jdk.graal.compiler.lir.stackslotalloc.GraphColoringStackSlotAllocator;
 import jdk.graal.compiler.lir.alloc.lsra.LinearScanPhase;
 import jdk.graal.compiler.lir.dfa.MarkBasePointersPhase;
 import jdk.graal.compiler.options.OptionValues;
@@ -45,7 +46,6 @@ public class AllocationStage extends LIRPhaseSuite<AllocationPhase.AllocationCon
         if (GraphColoringStackSlotAllocator.Options.LIROptGraphColoringStackSlotAllocator.getValue(options)) {
             appendPhase(new GraphColoringStackSlotAllocator());
         } else if (LSStackSlotAllocator.Options.LIROptLSStackSlotAllocator.getValue(options)) {
-        if (LSStackSlotAllocator.Options.LIROptLSStackSlotAllocator.getValue(options)) {
             appendPhase(new LSStackSlotAllocator());
         } else {
             appendPhase(new SimpleStackSlotAllocator());
