@@ -54,7 +54,6 @@ import jdk.graal.compiler.lir.framemap.SimpleVirtualStackSlot;
 import jdk.graal.compiler.lir.framemap.SimpleVirtualStackSlotAlias;
 import jdk.graal.compiler.lir.framemap.VirtualStackSlotRange;
 import jdk.graal.compiler.lir.gen.LIRGenerationResult;
-import jdk.graal.compiler.lir.phases.AllocationPhase;
 import jdk.graal.compiler.lir.util.BlockWorkList;
 import jdk.graal.compiler.options.Option;
 import jdk.graal.compiler.options.OptionKey;
@@ -68,7 +67,7 @@ import jdk.vm.ci.meta.Value;
  * different spill sizes are colored separately. Virtual stack slot ranges are allocated separately
  * because their size and alignment are not represented by a color.
  */
-public final class GraphColoringStackSlotAllocator extends AllocationPhase {
+public final class GraphColoringStackSlotAllocator extends StackSlotAllocator {
 
     /** Options controlling use of this allocator. */
     public static class Options {

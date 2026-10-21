@@ -30,14 +30,13 @@ import jdk.graal.compiler.lir.LIR;
 import jdk.graal.compiler.lir.StandardOp;
 import jdk.graal.compiler.lir.alloc.verifier.values.RAValue;
 import jdk.graal.compiler.lir.alloc.verifier.values.RAVariable;
-import jdk.graal.compiler.lir.dfa.UniqueWorkList;
+import jdk.graal.compiler.lir.util.BlockWorkList;
 import jdk.graal.compiler.util.EconomicHashMap;
 import jdk.graal.compiler.util.EconomicHashSet;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -162,7 +161,7 @@ public class FromUsageResolverGlobal {
      * information.
      */
     public void resolvePhiFromUsage() {
-        Queue<BasicBlock<?>> worklist = new UniqueWorkList(lir.getBlocks().length);
+        var worklist = new BlockWorkList(lir.getBlocks().length);
 
         this.initializeUsages();
 
@@ -180,7 +179,7 @@ public class FromUsageResolverGlobal {
         }
     }
 
-    protected void processBlock(Queue<BasicBlock<?>> worklist) {
+    protected void processBlock(BlockWorkList worklist) {
         var block = worklist.poll();
         assert block != null;
 

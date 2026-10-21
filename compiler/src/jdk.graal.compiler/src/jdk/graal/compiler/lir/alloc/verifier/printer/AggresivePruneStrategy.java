@@ -24,19 +24,17 @@
  */
 package jdk.graal.compiler.lir.alloc.verifier.printer;
 
-import jdk.graal.compiler.core.common.cfg.BasicBlock;
 import jdk.graal.compiler.core.common.cfg.BlockMap;
 import jdk.graal.compiler.lir.LIR;
 import jdk.graal.compiler.lir.alloc.verifier.RAVInstruction;
 import jdk.graal.compiler.lir.alloc.verifier.ValueAllocationState;
 import jdk.graal.compiler.lir.alloc.verifier.exceptions.ValueNotInRegisterException;
 import jdk.graal.compiler.lir.alloc.verifier.values.RAValue;
-import jdk.graal.compiler.lir.dfa.UniqueWorkList;
+import jdk.graal.compiler.lir.util.BlockWorkList;
 import jdk.graal.compiler.util.EconomicHashSet;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -63,7 +61,7 @@ public class AggresivePruneStrategy {
                     Map<RAVInstruction.Base, ValueNotInRegisterException> exceptions) {
         var cfg = lir.getControlFlowGraph();
         BlockMap<BlockState> blockState = new BlockMap<>(cfg);
-        Queue<BasicBlock<?>> worklist = new UniqueWorkList(lir.getBlocks().length);
+        var worklist = new BlockWorkList(lir.getBlocks().length);
         for (var block : cfg.getBlocks()) {
             if (block.getSuccessorCount() == 0) {
                 blockState.put(block, new BlockState());
