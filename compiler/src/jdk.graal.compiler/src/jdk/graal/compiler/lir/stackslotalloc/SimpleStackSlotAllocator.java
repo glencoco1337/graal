@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,12 @@ import jdk.graal.compiler.lir.framemap.SimpleVirtualStackSlot;
 import jdk.graal.compiler.lir.framemap.SimpleVirtualStackSlotAlias;
 import jdk.graal.compiler.lir.framemap.VirtualStackSlotRange;
 import jdk.graal.compiler.lir.gen.LIRGenerationResult;
-import jdk.graal.compiler.lir.phases.AllocationPhase;
 
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.ValueKind;
 
-public class SimpleStackSlotAllocator extends AllocationPhase {
+public class SimpleStackSlotAllocator extends StackSlotAllocator {
 
     @Override
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, AllocationContext context) {

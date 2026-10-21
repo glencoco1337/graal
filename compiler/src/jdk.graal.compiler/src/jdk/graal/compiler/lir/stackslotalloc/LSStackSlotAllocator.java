@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@ import jdk.graal.compiler.lir.framemap.SimpleVirtualStackSlot;
 import jdk.graal.compiler.lir.framemap.SimpleVirtualStackSlotAlias;
 import jdk.graal.compiler.lir.framemap.VirtualStackSlotRange;
 import jdk.graal.compiler.lir.gen.LIRGenerationResult;
-import jdk.graal.compiler.lir.phases.AllocationPhase;
 import jdk.graal.compiler.options.NestedBooleanOptionKey;
 import jdk.graal.compiler.options.Option;
 import jdk.graal.compiler.options.OptionType;
@@ -78,7 +77,7 @@ import jdk.vm.ci.meta.ValueKind;
  * {@link Use usage} of the stack slot must be marked with the {@link OperandFlag#UNINITIALIZED}.
  * Otherwise, the stack slot might be reused and its content destroyed.
  */
-public final class LSStackSlotAllocator extends AllocationPhase {
+public final class LSStackSlotAllocator extends StackSlotAllocator {
 
     public static class Options {
         // @formatter:off

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@ package jdk.graal.compiler.lir.phases;
 
 import jdk.graal.compiler.debug.Assertions;
 import jdk.graal.compiler.lir.alloc.AllocationStageVerifier;
-import jdk.graal.compiler.lir.stackslotalloc.GraphColoringStackSlotAllocator;
+import jdk.graal.compiler.lir.alloc.verifier.RegAllocVerifierPhase;
+import jdk.graal.compiler.lir.alloc.verifier.RegAllocVerifierUtil;
 import jdk.graal.compiler.lir.stackslotalloc.LSStackSlotAllocator;
 import jdk.graal.compiler.lir.stackslotalloc.SimpleStackSlotAllocator;
+import jdk.graal.compiler.lir.stackslotalloc.GraphColoringStackSlotAllocator;
 import jdk.graal.compiler.lir.alloc.lsra.LinearScanPhase;
 import jdk.graal.compiler.lir.dfa.MarkBasePointersPhase;
 import jdk.graal.compiler.options.OptionValues;
@@ -51,6 +53,10 @@ public class AllocationStage extends LIRPhaseSuite<AllocationPhase.AllocationCon
 
         if (Assertions.detailedAssertionsEnabled(options)) {
             appendPhase(new AllocationStageVerifier());
+        }
+
+        if (RegAllocVerifierPhase.Options.EnableRAVerifier.getValue(options)) {
+            RegAllocVerifierUtil.hookAllocationStage(this);
         }
     }
 }
